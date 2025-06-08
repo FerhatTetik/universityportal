@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yeni Haber Ekle - Kampüs Portalı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: #343a40;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.8);
+            padding: 1rem;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,.1);
+        }
+        .sidebar .nav-link.active {
+            background: #0d6efd;
+            color: white;
+        }
+        .main-content {
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 sidebar">
+                <div class="p-3">
+                    <h4>Admin Paneli</h4>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-home me-2"></i> Ana Sayfa
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="duyurular.html">
+                            <i class="fas fa-bullhorn me-2"></i> Duyurular
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="haberler.html">
+                            <i class="fas fa-newspaper me-2"></i> Haberler
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="galeri.html">
+                            <i class="fas fa-images me-2"></i> Galeri
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="kullanicilar.html">
+                            <i class="fas fa-users me-2"></i> Kullanıcılar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Yeni Haber Ekle</h2>
+                    <button class="btn btn-secondary" onclick="window.location.href='haberler.html'">
+                        <i class="fas fa-arrow-left me-2"></i>Geri Dön
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <form id="haberForm">
+                            <div class="mb-3">
+                                <label for="haberBaslik" class="form-label">Haber Başlığı</label>
+                                <input type="text" class="form-control" id="haberBaslik" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="haberKategori" class="form-label">Kategori</label>
+                                <select class="form-select" id="haberKategori" required>
+                                    <option value="">Kategori Seçin</option>
+                                    <option value="Akademik">Akademik</option>
+                                    <option value="Araştırma">Araştırma</option>
+                                    <option value="Etkinlik">Etkinlik</option>
+                                    <option value="Spor">Spor</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="haberIcerik" class="form-label">Haber İçeriği</label>
+                                <textarea class="form-control" id="haberIcerik" rows="5" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="haberTarih" class="form-label">Yayın Tarihi</label>
+                                <input type="date" class="form-control" id="haberTarih" required>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="haberDurum" checked>
+                                    <label class="form-check-label" for="haberDurum">
+                                        Aktif olarak yayınla
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <button type="button" class="btn btn-secondary me-2" onclick="window.location.href='haberler.html'">İptal</button>
+                                <button type="button" class="btn btn-primary" onclick="saveNews()">Kaydet</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API endpoint'i
+        const API_URL = 'http://localhost:3000/api';
+
+        // Haber kaydet
+        async function saveNews() {
+            const form = document.getElementById('haberForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('title', document.getElementById('haberBaslik').value);
+            formData.append('category', document.getElementById('haberKategori').value);
+            formData.append('content', document.getElementById('haberIcerik').value);
+            formData.append('publish_date', document.getElementById('haberTarih').value);
+            formData.append('status', document.getElementById('haberDurum').checked);
+
+            try {
+                const response = await fetch(`${API_URL}/news`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: document.getElementById('haberBaslik').value,
+                        category: document.getElementById('haberKategori').value,
+                        content: document.getElementById('haberIcerik').value,
+                        publish_date: document.getElementById('haberTarih').value,
+                        status: document.getElementById('haberDurum').checked
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Haber başarıyla kaydedildi!');
+                    window.location.href = 'haberler.html';
+                } else {
+                    throw new Error('Kaydetme başarısız oldu');
+                }
+            } catch (error) {
+                console.error('Haber kaydedilirken hata oluştu:', error);
+                alert('Haber kaydedilirken bir hata oluştu!');
+            }
+        }
+
+        // Çıkış yapma işlevi
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+</body>
+</html> 

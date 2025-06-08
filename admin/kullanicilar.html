@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kullanıcı Yönetimi - Kampüs Portalı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: #343a40;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.8);
+            padding: 1rem;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,.1);
+        }
+        .sidebar .nav-link.active {
+            background: #0d6efd;
+            color: white;
+        }
+        .main-content {
+            padding: 2rem;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 sidebar">
+                <div class="p-3">
+                    <h4>Admin Paneli</h4>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-home me-2"></i> Ana Sayfa
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="duyurular.html">
+                            <i class="fas fa-bullhorn me-2"></i> Duyurular
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="haberler.html">
+                            <i class="fas fa-newspaper me-2"></i> Haberler
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="galeri.html">
+                            <i class="fas fa-images me-2"></i> Galeri
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="kullanicilar.html">
+                            <i class="fas fa-users me-2"></i> Kullanıcılar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Kullanıcı Yönetimi</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#yeniKullaniciModal">
+                        <i class="fas fa-plus me-2"></i>Yeni Kullanıcı Ekle
+                    </button>
+                </div>
+
+                <!-- Filtreleme ve Arama -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="searchInput" placeholder="Kullanıcı ara...">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="roleFilter">
+                                    <option value="">Tüm Roller</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="editor">Editör</option>
+                                    <option value="user">Kullanıcı</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">Tüm Durumlar</option>
+                                    <option value="1">Aktif</option>
+                                    <option value="0">Pasif</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-secondary w-100" onclick="filterUsers()">Filtrele</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kullanıcı Listesi -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Profil</th>
+                                        <th>Ad Soyad</th>
+                                        <th>E-posta</th>
+                                        <th>Rol</th>
+                                        <th>Son Giriş</th>
+                                        <th>Durum</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Kullanıcılar JavaScript ile buraya eklenecek -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Sayfalama -->
+                        <nav aria-label="Sayfalama" class="mt-4">
+                            <ul class="pagination justify-content-center" id="pagination">
+                                <!-- Sayfalama JavaScript ile buraya eklenecek -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Yeni Kullanıcı Modal -->
+    <div class="modal fade" id="yeniKullaniciModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Yeni Kullanıcı Ekle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="yeniKullaniciForm">
+                        <div class="mb-3">
+                            <label for="kullaniciAd" class="form-label">Ad Soyad</label>
+                            <input type="text" class="form-control" id="kullaniciAd" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="kullaniciUsername" class="form-label">Kullanıcı Adı</label>
+                            <input type="text" class="form-control" id="kullaniciUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="kullaniciEmail" class="form-label">E-posta</label>
+                            <input type="email" class="form-control" id="kullaniciEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="kullaniciSifre" class="form-label">Şifre</label>
+                            <input type="password" class="form-control" id="kullaniciSifre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="kullaniciRol" class="form-label">Rol</label>
+                            <select class="form-select" id="kullaniciRol" required>
+                                <option value="">Rol Seçin</option>
+                                <option value="admin">Admin</option>
+                                <option value="editor">Editör</option>
+                                <option value="user">Kullanıcı</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="kullaniciDurum" checked>
+                                <label class="form-check-label" for="kullaniciDurum">
+                                    Aktif olarak yayınla
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" id="kullaniciKaydet">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kullanıcı Düzenleme Modal -->
+    <div class="modal fade" id="kullaniciDuzenleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Kullanıcı Düzenle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="kullaniciDuzenleForm">
+                        <input type="hidden" id="duzenleKullaniciId">
+                        <div class="mb-3">
+                            <label for="duzenleKullaniciAd" class="form-label">Ad Soyad</label>
+                            <input type="text" class="form-control" id="duzenleKullaniciAd" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="duzenleKullaniciUsername" class="form-label">Kullanıcı Adı</label>
+                            <input type="text" class="form-control" id="duzenleKullaniciUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="duzenleKullaniciEmail" class="form-label">E-posta</label>
+                            <input type="email" class="form-control" id="duzenleKullaniciEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="duzenleKullaniciRol" class="form-label">Rol</label>
+                            <select class="form-select" id="duzenleKullaniciRol" required>
+                                <option value="">Rol Seçin</option>
+                                <option value="admin">Admin</option>
+                                <option value="editor">Editör</option>
+                                <option value="user">Kullanıcı</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="duzenleKullaniciDurum">
+                                <label class="form-check-label" for="duzenleKullaniciDurum">
+                                    Aktif olarak yayınla
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" id="kullaniciGuncelle">Güncelle</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let allUsers = [];
+
+        // Sayfa yüklendiğinde kullanıcıları getir
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+        });
+
+        // Kullanıcıları yükle
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_URL}/users`);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Kullanıcılar yüklenirken bir hata oluştu');
+                }
+                
+                allUsers = await response.json();
+                displayUsers();
+            } catch (error) {
+                console.error('Hata:', error);
+                alert(error.message || 'Kullanıcılar yüklenirken bir hata oluştu');
+            }
+        }
+
+        // Kullanıcıları görüntüle
+        function displayUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedUsers = allUsers.slice(startIndex, endIndex);
+
+            paginatedUsers.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${user.id}</td>
+                    <td><img src="images/avatar-default.jpg" class="user-avatar" alt="Kullanıcı"></td>
+                    <td>${user.full_name}</td>
+                    <td>${user.email}</td>
+                    <td><span class="badge bg-${getRoleBadgeColor(user.role)}">${getRoleName(user.role)}</span></td>
+                    <td>${formatDate(user.created_at)}</td>
+                    <td><span class="badge bg-${user.status ? 'success' : 'secondary'}">${user.status ? 'Aktif' : 'Pasif'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-info text-white me-1" onclick="editUser(${user.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            displayPagination();
+        }
+
+        // Sayfalama
+        function displayPagination() {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            const totalPages = Math.ceil(allUsers.length / itemsPerPage);
+
+            // Önceki sayfa
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Önceki</a>
+            `;
+            pagination.appendChild(prevLi);
+
+            // Sayfa numaraları
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                li.innerHTML = `
+                    <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                `;
+                pagination.appendChild(li);
+            }
+
+            // Sonraki sayfa
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Sonraki</a>
+            `;
+            pagination.appendChild(nextLi);
+        }
+
+        // Sayfa değiştir
+        function changePage(page) {
+            if (page < 1 || page > Math.ceil(allUsers.length / itemsPerPage)) return;
+            currentPage = page;
+            displayUsers();
+        }
+
+        // Kullanıcıları filtrele
+        function filterUsers() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const roleFilter = document.getElementById('roleFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            allUsers = allUsers.filter(user => {
+                const matchesSearch = user.full_name.toLowerCase().includes(searchTerm) ||
+                                    user.email.toLowerCase().includes(searchTerm);
+                const matchesRole = !roleFilter || user.role === roleFilter;
+                const matchesStatus = !statusFilter || user.status.toString() === statusFilter;
+                return matchesSearch && matchesRole && matchesStatus;
+            });
+
+            currentPage = 1;
+            displayUsers();
+        }
+
+        // Yeni kullanıcı kaydet
+        document.getElementById('kullaniciKaydet').addEventListener('click', async function() {
+            const form = document.getElementById('yeniKullaniciForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const userData = {
+                username: document.getElementById('kullaniciUsername').value,
+                full_name: document.getElementById('kullaniciAd').value,
+                email: document.getElementById('kullaniciEmail').value,
+                password: document.getElementById('kullaniciSifre').value,
+                role: document.getElementById('kullaniciRol').value,
+                status: document.getElementById('kullaniciDurum').checked ? 1 : 0
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Kullanıcı kaydedilirken bir hata oluştu');
+                }
+
+                const result = await response.json();
+                alert('Kullanıcı başarıyla kaydedildi!');
+                
+                // Modal'ı kapat ve formu temizle
+                const modal = bootstrap.Modal.getInstance(document.getElementById('yeniKullaniciModal'));
+                modal.hide();
+                form.reset();
+
+                // Kullanıcı listesini yenile
+                loadUsers();
+            } catch (error) {
+                console.error('Hata:', error);
+                alert(error.message || 'Kullanıcı kaydedilirken bir hata oluştu');
+            }
+        });
+
+        // Kullanıcı düzenle
+        async function editUser(id) {
+            try {
+                const response = await fetch(`${API_URL}/users/${id}`);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Kullanıcı bilgileri alınırken bir hata oluştu');
+                }
+                
+                const user = await response.json();
+                
+                document.getElementById('duzenleKullaniciId').value = user.id;
+                document.getElementById('duzenleKullaniciAd').value = user.full_name;
+                document.getElementById('duzenleKullaniciUsername').value = user.username;
+                document.getElementById('duzenleKullaniciEmail').value = user.email;
+                document.getElementById('duzenleKullaniciRol').value = user.role;
+                document.getElementById('duzenleKullaniciDurum').checked = user.status === 1;
+
+                const modal = new bootstrap.Modal(document.getElementById('kullaniciDuzenleModal'));
+                modal.show();
+            } catch (error) {
+                console.error('Hata:', error);
+                alert(error.message || 'Kullanıcı bilgileri alınırken bir hata oluştu');
+            }
+        }
+
+        // Kullanıcı güncelle
+        document.getElementById('kullaniciGuncelle').addEventListener('click', async function() {
+            const form = document.getElementById('kullaniciDuzenleForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const id = document.getElementById('duzenleKullaniciId').value;
+            const userData = {
+                username: document.getElementById('duzenleKullaniciUsername').value,
+                full_name: document.getElementById('duzenleKullaniciAd').value,
+                email: document.getElementById('duzenleKullaniciEmail').value,
+                role: document.getElementById('duzenleKullaniciRol').value,
+                status: document.getElementById('duzenleKullaniciDurum').checked ? 1 : 0
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/users/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Kullanıcı güncellenirken bir hata oluştu');
+                }
+
+                alert('Kullanıcı başarıyla güncellendi!');
+                
+                // Modal'ı kapat
+                const modal = bootstrap.Modal.getInstance(document.getElementById('kullaniciDuzenleModal'));
+                modal.hide();
+
+                // Kullanıcı listesini yenile
+                loadUsers();
+            } catch (error) {
+                console.error('Hata:', error);
+                alert(error.message || 'Kullanıcı güncellenirken bir hata oluştu');
+            }
+        });
+
+        // Kullanıcı sil
+        async function deleteUser(id) {
+            if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/users/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Kullanıcı silinirken bir hata oluştu');
+                }
+
+                alert('Kullanıcı başarıyla silindi!');
+                loadUsers();
+            } catch (error) {
+                console.error('Hata:', error);
+                alert(error.message || 'Kullanıcı silinirken bir hata oluştu');
+            }
+        }
+
+        // Yardımcı fonksiyonlar
+        function getRoleBadgeColor(role) {
+            switch (role) {
+                case 'admin': return 'danger';
+                case 'editor': return 'warning';
+                case 'user': return 'info';
+                default: return 'secondary';
+            }
+        }
+
+        function getRoleName(role) {
+            switch (role) {
+                case 'admin': return 'Admin';
+                case 'editor': return 'Editör';
+                case 'user': return 'Kullanıcı';
+                default: return role;
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('tr-TR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Çıkış yapma işlevi
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+</body>
+</html> 

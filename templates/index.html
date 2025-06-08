@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kampüs Portalı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .card { margin-bottom: 20px; }
+        .gallery-img { max-width: 200px; height: auto; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Kampüs Portalı Verileri</h1>
+
+        <!-- Kullanıcılar -->
+        <section class="mb-5">
+            <h2>Kullanıcılar</h2>
+            <div class="row">
+                {% for user in users %}
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ user.name }}</h5>
+                            <p class="card-text">
+                                Email: {{ user.email }}<br>
+                                Rol: {{ user.role }}<br>
+                                Durum: {{ "Aktif" if user.status else "Pasif" }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Duyurular -->
+        <section class="mb-5">
+            <h2>Duyurular</h2>
+            <div class="row">
+                {% for announcement in announcements %}
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ announcement.title }}</h5>
+                            <p class="card-text">
+                                {{ announcement.content }}<br>
+                                Kategori: {{ announcement.category }}<br>
+                                Tarih: {{ announcement.publish_date }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Haberler -->
+        <section class="mb-5">
+            <h2>Haberler</h2>
+            <div class="row">
+                {% for item in news %}
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.title }}</h5>
+                            <p class="card-text">
+                                {{ item.content }}<br>
+                                Kategori: {{ item.category }}<br>
+                                Tarih: {{ item.publish_date }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Galeri -->
+        <section class="mb-5">
+            <h2>Galeri</h2>
+            <div class="row">
+                {% for item in gallery %}
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.title }}</h5>
+                            <p class="card-text">
+                                {{ item.description }}<br>
+                                Kategori: {{ item.category }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

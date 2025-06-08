@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duyurular Yönetimi - Kampüs Portalı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: #343a40;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.8);
+            padding: 1rem;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,.1);
+        }
+        .sidebar .nav-link.active {
+            background: #0d6efd;
+            color: white;
+        }
+        .main-content {
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 sidebar">
+                <div class="p-3">
+                    <h4>Admin Paneli</h4>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-home me-2"></i> Ana Sayfa
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="duyurular.html">
+                            <i class="fas fa-bullhorn me-2"></i> Duyurular
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="haberler.html">
+                            <i class="fas fa-newspaper me-2"></i> Haberler
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="galeri.html">
+                            <i class="fas fa-images me-2"></i> Galeri
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="kullanicilar.html">
+                            <i class="fas fa-users me-2"></i> Kullanıcılar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Duyurular Yönetimi</h2>
+                    <button class="btn btn-primary" onclick="window.location.href='duyuru-ekle.html'">
+                        <i class="fas fa-plus me-2"></i>Yeni Duyuru Ekle
+                    </button>
+                </div>
+
+                <!-- Filtreleme ve Arama -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="searchInput" placeholder="Duyuru ara...">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="categoryFilter">
+                                    <option value="">Tüm Kategoriler</option>
+                                    <option value="Akademik">Akademik</option>
+                                    <option value="Etkinlik">Etkinlik</option>
+                                    <option value="Genel">Genel</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">Tüm Durumlar</option>
+                                    <option value="aktif">Aktif</option>
+                                    <option value="pasif">Pasif</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-secondary w-100" onclick="filterAnnouncements()">Filtrele</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Duyuru Listesi -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Başlık</th>
+                                        <th>Kategori</th>
+                                        <th>Yayın Tarihi</th>
+                                        <th>Durum</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="announcementsTableBody">
+                                    <!-- Duyurular JavaScript ile buraya eklenecek -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Sayfalama -->
+                        <nav aria-label="Sayfalama" class="mt-4">
+                            <ul class="pagination justify-content-center" id="pagination">
+                                <!-- Sayfalama JavaScript ile buraya eklenecek -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Düzenleme Modal -->
+    <div class="modal fade" id="duzenleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Duyuru Düzenle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="duzenleForm">
+                        <input type="hidden" id="duzenleId">
+                        <div class="mb-3">
+                            <label for="duzenleBaslik" class="form-label">Duyuru Başlığı</label>
+                            <input type="text" class="form-control" id="duzenleBaslik" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="duzenleKategori" class="form-label">Kategori</label>
+                            <select class="form-select" id="duzenleKategori" required>
+                                <option value="">Kategori Seçin</option>
+                                <option value="Akademik">Akademik</option>
+                                <option value="Etkinlik">Etkinlik</option>
+                                <option value="Genel">Genel</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="duzenleIcerik" class="form-label">Duyuru İçeriği</label>
+                            <textarea class="form-control" id="duzenleIcerik" rows="5" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="duzenleTarih" class="form-label">Yayın Tarihi</label>
+                            <input type="date" class="form-control" id="duzenleTarih" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="duzenleDurum">
+                                <label class="form-check-label" for="duzenleDurum">
+                                    Aktif olarak yayınla
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" onclick="updateAnnouncement()">Güncelle</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API endpoint'i
+        const API_URL = 'http://localhost:3000/api';
+        let allAnnouncements = [];
+        const itemsPerPage = 10;
+        let currentPage = 1;
+
+        // Duyuruları yükle
+        async function loadAnnouncements() {
+            try {
+                const response = await fetch(`${API_URL}/announcements`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                allAnnouncements = await response.json();
+                filterAnnouncements();
+            } catch (error) {
+                console.error('Duyurular yüklenirken hata oluştu:', error);
+                document.getElementById('announcementsTableBody').innerHTML = 
+                    `<tr><td colspan="6" class="text-center text-danger">Duyurular yüklenirken bir hata oluştu: ${error.message}</td></tr>`;
+            }
+        }
+
+        // Duyuruları görüntüle
+        function displayAnnouncements(announcements) {
+            const tbody = document.getElementById('announcementsTableBody');
+            if (announcements.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Gösterilecek duyuru bulunamadı.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = announcements.map(announcement => `
+                <tr>
+                    <td>${announcement.id}</td>
+                    <td>${announcement.title}</td>
+                    <td><span class="badge bg-primary">${announcement.category}</span></td>
+                    <td>${announcement.publish_date}</td>
+                    <td>
+                        <span class="badge ${announcement.status ? 'bg-success' : 'bg-secondary'}">
+                            ${announcement.status ? 'Aktif' : 'Pasif'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-info text-white me-1" onclick="editAnnouncement(${announcement.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteAnnouncement(${announcement.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Duyuruları filtrele
+        function filterAnnouncements() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            const filteredAnnouncements = allAnnouncements.filter(announcement => {
+                const matchesSearch = announcement.title.toLowerCase().includes(searchText) ||
+                                    announcement.content.toLowerCase().includes(searchText);
+                const matchesCategory = !category || announcement.category === category;
+                const matchesStatus = !status || 
+                    (status === 'aktif' && announcement.status) ||
+                    (status === 'pasif' && !announcement.status);
+                return matchesSearch && matchesCategory && matchesStatus;
+            });
+
+            // Sayfalama
+            const totalPages = Math.ceil(filteredAnnouncements.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedAnnouncements = filteredAnnouncements.slice(startIndex, endIndex);
+
+            displayAnnouncements(paginatedAnnouncements);
+            displayPagination(totalPages);
+        }
+
+        // Sayfalama
+        function displayPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            let paginationHTML = '';
+
+            // Önceki sayfa butonu
+            paginationHTML += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Önceki</a>
+                </li>
+            `;
+
+            // Sayfa numaraları
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `
+                    <li class="page-item ${currentPage === i ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                    </li>
+                `;
+            }
+
+            // Sonraki sayfa butonu
+            paginationHTML += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Sonraki</a>
+                </li>
+            `;
+
+            pagination.innerHTML = paginationHTML;
+        }
+
+        // Sayfa değiştir
+        function changePage(page) {
+            currentPage = page;
+            filterAnnouncements();
+        }
+
+        // Duyuru düzenle
+        async function editAnnouncement(id) {
+            try {
+                const response = await fetch(`${API_URL}/announcements/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const announcement = await response.json();
+
+                // Form alanlarını doldur
+                document.getElementById('duzenleId').value = announcement.id;
+                document.getElementById('duzenleBaslik').value = announcement.title;
+                document.getElementById('duzenleKategori').value = announcement.category;
+                document.getElementById('duzenleIcerik').value = announcement.content;
+                document.getElementById('duzenleTarih').value = announcement.publish_date;
+                document.getElementById('duzenleDurum').checked = announcement.status;
+
+                // Modal'ı göster
+                const modal = new bootstrap.Modal(document.getElementById('duzenleModal'));
+                modal.show();
+            } catch (error) {
+                console.error('Duyuru bilgileri alınırken hata oluştu:', error);
+                alert('Duyuru bilgileri alınırken bir hata oluştu!');
+            }
+        }
+
+        // Duyuru güncelle
+        async function updateAnnouncement() {
+            const form = document.getElementById('duzenleForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const id = document.getElementById('duzenleId').value;
+            const announcement = {
+                title: document.getElementById('duzenleBaslik').value,
+                category: document.getElementById('duzenleKategori').value,
+                content: document.getElementById('duzenleIcerik').value,
+                publish_date: document.getElementById('duzenleTarih').value,
+                status: document.getElementById('duzenleDurum').checked
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/announcements/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(announcement)
+                });
+
+                if (response.ok) {
+                    alert('Duyuru başarıyla güncellendi!');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('duzenleModal'));
+                    modal.hide();
+                    loadAnnouncements();
+                } else {
+                    throw new Error('Güncelleme başarısız oldu');
+                }
+            } catch (error) {
+                console.error('Duyuru güncellenirken hata oluştu:', error);
+                alert('Duyuru güncellenirken bir hata oluştu!');
+            }
+        }
+
+        // Duyuru sil
+        async function deleteAnnouncement(id) {
+            if (!confirm('Bu duyuruyu silmek istediğinizden emin misiniz?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/announcements/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Duyuru başarıyla silindi!');
+                    loadAnnouncements();
+                } else {
+                    throw new Error('Silme işlemi başarısız oldu');
+                }
+            } catch (error) {
+                console.error('Duyuru silinirken hata oluştu:', error);
+                alert('Duyuru silinirken bir hata oluştu!');
+            }
+        }
+
+        // Çıkış yapma işlevi
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                window.location.href = 'login.html';
+            }
+        });
+
+        // Sayfa yüklendiğinde duyuruları yükle
+        document.addEventListener('DOMContentLoaded', loadAnnouncements);
+    </script>
+</body>
+</html> 

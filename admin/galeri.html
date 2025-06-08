@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galeri Yönetimi - Kampüs Portalı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: #343a40;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.8);
+            padding: 1rem;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,.1);
+        }
+        .sidebar .nav-link.active {
+            background: #0d6efd;
+            color: white;
+        }
+        .main-content {
+            padding: 2rem;
+        }
+        .gallery-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .gallery-item .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 8px;
+        }
+        .gallery-item:hover .overlay {
+            opacity: 1;
+        }
+        .gallery-item .overlay .btn {
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 sidebar">
+                <div class="p-3">
+                    <h4>Admin Paneli</h4>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-home me-2"></i> Ana Sayfa
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="duyurular.html">
+                            <i class="fas fa-bullhorn me-2"></i> Duyurular
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="haberler.html">
+                            <i class="fas fa-newspaper me-2"></i> Haberler
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="galeri.html">
+                            <i class="fas fa-images me-2"></i> Galeri
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="kullanicilar.html">
+                            <i class="fas fa-users me-2"></i> Kullanıcılar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Galeri Yönetimi</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#yeniGaleriModal">
+                        <i class="fas fa-plus me-2"></i>Yeni Görsel Ekle
+                    </button>
+                </div>
+
+                <!-- Filtreleme ve Arama -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" placeholder="Görsel ara...">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select">
+                                    <option value="">Tüm Kategoriler</option>
+                                    <option value="etkinlik">Etkinlik</option>
+                                    <option value="kampüs">Kampüs</option>
+                                    <option value="öğrenci">Öğrenci</option>
+                                    <option value="akademik">Akademik</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select">
+                                    <option value="">Tüm Durumlar</option>
+                                    <option value="aktif">Aktif</option>
+                                    <option value="pasif">Pasif</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-secondary w-100">Filtrele</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Galeri Grid -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="gallery-item">
+                            <img src="images/gallery1.jpg" alt="Galeri Görseli">
+                            <div class="overlay">
+                                <button class="btn btn-info text-white">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="gallery-item">
+                            <img src="images/gallery2.jpg" alt="Galeri Görseli">
+                            <div class="overlay">
+                                <button class="btn btn-info text-white">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="gallery-item">
+                            <img src="images/gallery3.jpg" alt="Galeri Görseli">
+                            <div class="overlay">
+                                <button class="btn btn-info text-white">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sayfalama -->
+                <nav aria-label="Sayfalama" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">Önceki</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">Sonraki</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Yeni Görsel Modal -->
+    <div class="modal fade" id="yeniGaleriModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Yeni Görsel Ekle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="yeniGaleriForm">
+                        <div class="mb-3">
+                            <label for="gorselBaslik" class="form-label">Görsel Başlığı</label>
+                            <input type="text" class="form-control" id="gorselBaslik" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="gorselKategori" class="form-label">Kategori</label>
+                            <select class="form-select" id="gorselKategori" required>
+                                <option value="">Kategori Seçin</option>
+                                <option value="etkinlik">Etkinlik</option>
+                                <option value="kampüs">Kampüs</option>
+                                <option value="öğrenci">Öğrenci</option>
+                                <option value="akademik">Akademik</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="gorselDosya" class="form-label">Görsel</label>
+                            <input type="file" class="form-control" id="gorselDosya" accept="image/*" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="gorselAciklama" class="form-label">Açıklama</label>
+                            <textarea class="form-control" id="gorselAciklama" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="gorselDurum" checked>
+                                <label class="form-check-label" for="gorselDurum">
+                                    Aktif olarak yayınla
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" id="gorselKaydet">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Çıkış yapma işlevi
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                window.location.href = 'login.html';
+            }
+        });
+
+        // Yeni görsel kaydetme işlevi
+        document.getElementById('gorselKaydet').addEventListener('click', function() {
+            const form = document.getElementById('yeniGaleriForm');
+            if(form.checkValidity()) {
+                // Burada API'ye kaydetme isteği atılacak
+                alert('Görsel başarıyla kaydedildi!');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('yeniGaleriModal'));
+                modal.hide();
+            } else {
+                form.reportValidity();
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kampüs Portalı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .card { margin-bottom: 20px; }
+        .gallery-img { max-width: 200px; height: auto; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Kampüs Portalı Verileri</h1>
+
+        <!-- Kullanıcılar -->
+        <section class="mb-5">
+            <h2>Kullanıcılar</h2>
+            <div class="row" id="users-container">
+                <!-- Kullanıcılar JavaScript ile buraya eklenecek -->
+            </div>
+        </section>
+
+        <!-- Duyurular -->
+        <section class="mb-5">
+            <h2>Duyurular</h2>
+            <div class="row" id="announcements-container">
+                <!-- Duyurular JavaScript ile buraya eklenecek -->
+            </div>
+        </section>
+
+        <!-- Haberler -->
+        <section class="mb-5">
+            <h2>Haberler</h2>
+            <div class="row" id="news-container">
+                <!-- Haberler JavaScript ile buraya eklenecek -->
+            </div>
+        </section>
+
+        <!-- Galeri -->
+        <section class="mb-5">
+            <h2>Galeri</h2>
+            <div class="row" id="gallery-container">
+                <!-- Galeri görselleri JavaScript ile buraya eklenecek -->
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API endpoint'leri
+        const API_URL = 'http://localhost:3000/api';
+
+        // Verileri yükle
+        async function loadData() {
+            try {
+                // Kullanıcıları yükle
+                const usersResponse = await fetch(`${API_URL}/users`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const users = await usersResponse.json();
+                displayUsers(users);
+
+                // Duyuruları yükle
+                const announcementsResponse = await fetch(`${API_URL}/announcements`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const announcements = await announcementsResponse.json();
+                displayAnnouncements(announcements);
+
+                // Haberleri yükle
+                const newsResponse = await fetch(`${API_URL}/news`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const news = await newsResponse.json();
+                displayNews(news);
+
+                // Galeri görsellerini yükle
+                const galleryResponse = await fetch(`${API_URL}/gallery`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const gallery = await galleryResponse.json();
+                displayGallery(gallery);
+            } catch (error) {
+                console.error('Veri yükleme hatası:', error);
+                document.body.innerHTML += `<div class="alert alert-danger">Veri yükleme hatası: ${error.message}</div>`;
+            }
+        }
+
+        // Kullanıcıları görüntüle
+        function displayUsers(users) {
+            const container = document.getElementById('users-container');
+            container.innerHTML = users.map(user => `
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${user.name}</h5>
+                            <p class="card-text">
+                                Email: ${user.email}<br>
+                                Rol: ${user.role}<br>
+                                Durum: ${user.status ? 'Aktif' : 'Pasif'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Duyuruları görüntüle
+        function displayAnnouncements(announcements) {
+            const container = document.getElementById('announcements-container');
+            container.innerHTML = announcements.map(announcement => `
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${announcement.title}</h5>
+                            <p class="card-text">
+                                ${announcement.content}<br>
+                                Kategori: ${announcement.category}<br>
+                                Tarih: ${announcement.publish_date}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Haberleri görüntüle
+        function displayNews(news) {
+            const container = document.getElementById('news-container');
+            container.innerHTML = news.map(item => `
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${item.title}</h5>
+                            <p class="card-text">
+                                ${item.content}<br>
+                                Kategori: ${item.category}<br>
+                                Tarih: ${item.publish_date}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Galeri görsellerini görüntüle
+        function displayGallery(gallery) {
+            const container = document.getElementById('gallery-container');
+            container.innerHTML = gallery.map(item => `
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${item.title}</h5>
+                            <p class="card-text">
+                                ${item.description}<br>
+                                Kategori: ${item.category}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Sayfa yüklendiğinde verileri yükle
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html> 

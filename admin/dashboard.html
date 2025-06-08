@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Paneli - Kampüs Portalı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: #343a40;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.8);
+            padding: 1rem;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,.1);
+        }
+        .sidebar .nav-link.active {
+            background: #0d6efd;
+            color: white;
+        }
+        .main-content {
+            padding: 2rem;
+        }
+        .stat-card {
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .stat-card i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 sidebar">
+                <div class="p-3">
+                    <h4>Admin Paneli</h4>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="dashboard.html">
+                            <i class="fas fa-home me-2"></i> Ana Sayfa
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="duyurular.html">
+                            <i class="fas fa-bullhorn me-2"></i> Duyurular
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="haberler.html">
+                            <i class="fas fa-newspaper me-2"></i> Haberler
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="galeri.html">
+                            <i class="fas fa-images me-2"></i> Galeri
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="kullanicilar.html">
+                            <i class="fas fa-users me-2"></i> Kullanıcılar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Kontrol Paneli</h2>
+                    <div class="user-info">
+                        <span class="me-2">Hoş geldiniz, Admin</span>
+                        <img src="https://via.placeholder.com/40" class="rounded-circle" alt="Profil">
+                    </div>
+                </div>
+
+                <!-- İstatistik Kartları -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <i class="fas fa-bullhorn text-primary"></i>
+                            <h3>24</h3>
+                            <p class="text-muted mb-0">Aktif Duyuru</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <i class="fas fa-newspaper text-success"></i>
+                            <h3>156</h3>
+                            <p class="text-muted mb-0">Toplam Haber</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <i class="fas fa-images text-info"></i>
+                            <h3>89</h3>
+                            <p class="text-muted mb-0">Galeri Görseli</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <i class="fas fa-users text-warning"></i>
+                            <h3>12</h3>
+                            <p class="text-muted mb-0">Aktif Kullanıcı</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Son Aktiviteler -->
+                <div class="row mt-4">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Son Aktiviteler</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">Yeni Duyuru Eklendi</h6>
+                                            <small>3 dakika önce</small>
+                                        </div>
+                                        <p class="mb-1">Kayıt yenileme tarihleri duyurusu yayınlandı.</p>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">Yeni Haber Eklendi</h6>
+                                            <small>1 saat önce</small>
+                                        </div>
+                                        <p class="mb-1">Uluslararası araştırma projesi haberi eklendi.</p>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">Galeri Güncellendi</h6>
+                                            <small>2 saat önce</small>
+                                        </div>
+                                        <p class="mb-1">5 yeni görsel galeriye eklendi.</p>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Hızlı İşlemler</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>Yeni Duyuru Ekle
+                                    </button>
+                                    <button class="btn btn-success">
+                                        <i class="fas fa-plus me-2"></i>Yeni Haber Ekle
+                                    </button>
+                                    <button class="btn btn-info text-white">
+                                        <i class="fas fa-upload me-2"></i>Galeri Görseli Yükle
+                                    </button>
+                                    <button class="btn btn-warning text-white">
+                                        <i class="fas fa-user-plus me-2"></i>Yeni Kullanıcı Ekle
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Çıkış yapma işlevi
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+</body>
+</html> 

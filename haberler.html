@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haberler - Kampüs Portalı</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">Kampüs Portalı</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Ana Sayfa</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="duyurular.html">Duyurular</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="haberler.html">Haberler</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="galeri.html">Galeri</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Haberler Başlık -->
+    <div class="container mt-5">
+        <h1 class="text-center mb-5">Kampüs Haberleri</h1>
+
+        <!-- Haber Arama ve Filtreleme -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Haber ara...">
+                    <button class="btn btn-primary" type="button" onclick="filterNews()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <select class="form-select" id="categoryFilter" onchange="filterNews()">
+                    <option value="">Tüm Kategoriler</option>
+                    <option value="Akademik">Akademik</option>
+                    <option value="Etkinlik">Etkinlik</option>
+                    <option value="Genel">Genel</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Öne Çıkan Haber -->
+        <div id="featured-news" class="card mb-5">
+            <!-- Öne çıkan haber JavaScript ile buraya eklenecek -->
+        </div>
+
+        <!-- Haber Listesi -->
+        <div class="row" id="news-container">
+            <!-- Haberler JavaScript ile buraya eklenecek -->
+        </div>
+
+        <!-- Sayfalama -->
+        <nav aria-label="Sayfalama" class="mt-4">
+            <ul class="pagination justify-content-center" id="pagination">
+                <!-- Sayfalama JavaScript ile buraya eklenecek -->
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>İletişim</h5>
+                    <p>Email: info@kampus.edu.tr<br>
+                    Tel: +90 123 456 7890</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Hızlı Bağlantılar</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-light">Akademik Takvim</a></li>
+                        <li><a href="#" class="text-light">Öğrenci Bilgi Sistemi</a></li>
+                        <li><a href="#" class="text-light">Kütüphane</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Sosyal Medya</h5>
+                    <div class="social-links">
+                        <a href="#" class="text-light me-2"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-light me-2"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-light me-2"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API endpoint'i
+        const API_URL = 'http://localhost:3000/api';
+        let allNews = [];
+        const itemsPerPage = 4;
+        let currentPage = 1;
+
+        // Haberleri yükle
+        async function loadNews() {
+            try {
+                const response = await fetch(`${API_URL}/news`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                allNews = await response.json();
+                
+                // Öne çıkan haberi göster
+                displayFeaturedNews(allNews[0]);
+                
+                // Haberleri filtrele ve göster
+                filterNews();
+            } catch (error) {
+                console.error('Haberler yüklenirken hata oluştu:', error);
+                document.getElementById('news-container').innerHTML = 
+                    `<div class="alert alert-danger">Haberler yüklenirken bir hata oluştu: ${error.message}</div>`;
+            }
+        }
+
+        // Öne çıkan haberi göster
+        function displayFeaturedNews(news) {
+            const container = document.getElementById('featured-news');
+            if (!news) {
+                container.innerHTML = '<div class="alert alert-info">Öne çıkan haber bulunamadı.</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        <img src="${news.image}" class="img-fluid rounded-start h-100" alt="${news.title}">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <h3 class="card-title">${news.title}</h3>
+                            <p class="card-text">${news.content}</p>
+                            <p class="card-text"><small class="text-muted">Yayın Tarihi: ${news.publish_date}</small></p>
+                            <a href="#" class="btn btn-primary">Devamını Oku</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Haberleri görüntüle
+        function displayNews(news) {
+            const container = document.getElementById('news-container');
+            if (news.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">Gösterilecek haber bulunamadı.</div>';
+                return;
+            }
+
+            container.innerHTML = news.map(item => `
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <img src="${item.image}" class="card-img-top" alt="${item.title}">
+                        <div class="card-body">
+                            <h5 class="card-title">${item.title}</h5>
+                            <p class="card-text">${item.content}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Yayın Tarihi: ${item.publish_date}</small>
+                                <a href="#" class="btn btn-outline-primary">Detaylar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Haberleri filtrele
+        function filterNews() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+
+            const filteredNews = allNews.filter(news => {
+                const matchesSearch = news.title.toLowerCase().includes(searchText) ||
+                                    news.content.toLowerCase().includes(searchText);
+                const matchesCategory = !category || news.category === category;
+                return matchesSearch && matchesCategory;
+            });
+
+            // Sayfalama
+            const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedNews = filteredNews.slice(startIndex, endIndex);
+
+            displayNews(paginatedNews);
+            displayPagination(totalPages);
+        }
+
+        // Sayfalama
+        function displayPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            let paginationHTML = '';
+
+            // Önceki sayfa butonu
+            paginationHTML += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Önceki</a>
+                </li>
+            `;
+
+            // Sayfa numaraları
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `
+                    <li class="page-item ${currentPage === i ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                    </li>
+                `;
+            }
+
+            // Sonraki sayfa butonu
+            paginationHTML += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Sonraki</a>
+                </li>
+            `;
+
+            pagination.innerHTML = paginationHTML;
+        }
+
+        // Sayfa değiştir
+        function changePage(page) {
+            currentPage = page;
+            filterNews();
+        }
+
+        // Sayfa yüklendiğinde haberleri yükle
+        document.addEventListener('DOMContentLoaded', loadNews);
+    </script>
+</body>
+</html> 
