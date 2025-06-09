@@ -318,22 +318,29 @@ app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
     });
 });
 
-// Duyuruları getir (editör ve admin)
-app.get('/api/announcements', authenticateToken, requireEditorOrAdmin, (req, res) => {
-    db.all('SELECT * FROM announcements', [], (err, rows) => {
+// Duyuruları getir
+app.get('/api/announcements', (req, res) => {
+    const query = `
+        SELECT * FROM announcements 
+        WHERE status = 1 
+        ORDER BY publish_date DESC
+    `;
+    
+    db.all(query, [], (err, rows) => {
         if (err) {
-            console.error('Duyurular getirme hatası:', err);
+            console.error('Duyurular getirilirken hata oluştu:', err);
             res.status(500).json({ error: err.message });
             return;
         }
-        res.json(rows);
+        res.json(rows || []);
     });
 });
 
-// Haberleri getir (editör ve admin)
-app.get('/api/news', authenticateToken, requireEditorOrAdmin, (req, res) => {
+// Haberleri getir
+app.get('/api/news', (req, res) => {
     const query = `
         SELECT * FROM news 
+        WHERE status = 1 
         ORDER BY publish_date DESC
     `;
     
@@ -343,14 +350,15 @@ app.get('/api/news', authenticateToken, requireEditorOrAdmin, (req, res) => {
             res.status(500).json({ error: err.message });
             return;
         }
-        res.json(rows);
+        res.json(rows || []);
     });
 });
 
-// Galeri görsellerini getir (editör ve admin)
-app.get('/api/gallery', authenticateToken, requireEditorOrAdmin, (req, res) => {
+// Galeri görsellerini getir
+app.get('/api/gallery', (req, res) => {
     const query = `
         SELECT * FROM gallery 
+        WHERE status = 1 
         ORDER BY created_at DESC
     `;
     
@@ -360,7 +368,7 @@ app.get('/api/gallery', authenticateToken, requireEditorOrAdmin, (req, res) => {
             res.status(500).json({ error: err.message });
             return;
         }
-        res.json(rows);
+        res.json(rows || []);
     });
 });
 
