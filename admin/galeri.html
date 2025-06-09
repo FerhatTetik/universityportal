@@ -141,60 +141,14 @@
                 </div>
 
                 <!-- Galeri Grid -->
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="gallery-item">
-                            <img src="images/gallery1.jpg" alt="Galeri Görseli">
-                            <div class="overlay">
-                                <button class="btn btn-info text-white">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-danger">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="gallery-item">
-                            <img src="images/gallery2.jpg" alt="Galeri Görseli">
-                            <div class="overlay">
-                                <button class="btn btn-info text-white">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-danger">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="gallery-item">
-                            <img src="images/gallery3.jpg" alt="Galeri Görseli">
-                            <div class="overlay">
-                                <button class="btn btn-info text-white">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-danger">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                <div class="row" id="galleryContainer">
+                    <!-- Galeri görselleri burada dinamik olarak eklenecek -->
                 </div>
 
                 <!-- Sayfalama -->
                 <nav aria-label="Sayfalama" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1">Önceki</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">Sonraki</a>
-                        </li>
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- Sayfa numaraları burada dinamik olarak eklenecek -->
                     </ul>
                 </nav>
             </div>
@@ -210,14 +164,14 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="yeniGaleriForm">
+                    <form id="yeniGaleriForm" onsubmit="gorselKaydet(event)">
                         <div class="mb-3">
                             <label for="gorselBaslik" class="form-label">Görsel Başlığı</label>
-                            <input type="text" class="form-control" id="gorselBaslik" required>
+                            <input type="text" class="form-control" id="gorselBaslik" name="title" required>
                         </div>
                         <div class="mb-3">
                             <label for="gorselKategori" class="form-label">Kategori</label>
-                            <select class="form-select" id="gorselKategori" required>
+                            <select class="form-select" id="gorselKategori" name="category" required>
                                 <option value="">Kategori Seçin</option>
                                 <option value="etkinlik">Etkinlik</option>
                                 <option value="kampüs">Kampüs</option>
@@ -227,25 +181,25 @@
                         </div>
                         <div class="mb-3">
                             <label for="gorselDosya" class="form-label">Görsel</label>
-                            <input type="file" class="form-control" id="gorselDosya" accept="image/*" required>
+                            <input type="file" class="form-control" id="gorselDosya" name="image" accept="image/*" required>
                         </div>
                         <div class="mb-3">
                             <label for="gorselAciklama" class="form-label">Açıklama</label>
-                            <textarea class="form-control" id="gorselAciklama" rows="3"></textarea>
+                            <textarea class="form-control" id="gorselAciklama" name="description" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="gorselDurum" checked>
+                                <input class="form-check-input" type="checkbox" id="gorselDurum" name="status" checked>
                                 <label class="form-check-label" for="gorselDurum">
                                     Aktif olarak yayınla
                                 </label>
                             </div>
                         </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                            <button type="submit" class="btn btn-primary">Kaydet</button>
+                        </div>
                     </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="button" class="btn btn-primary" id="gorselKaydet">Kaydet</button>
                 </div>
             </div>
         </div>
@@ -255,7 +209,7 @@
     <script>
         const API_URL = 'http://localhost:3000/api';
         let currentPage = 1;
-        const itemsPerPage = 9;
+        const itemsPerPage = 12;
         let allGalleryItems = [];
 
         // Token kontrolü
@@ -265,31 +219,22 @@
                 window.location.href = 'login.html';
                 return;
             }
-            
-            // Kullanıcı rolünü kontrol et
-            const user = JSON.parse(localStorage.getItem('user'));
-            if (!user || (user.role !== 'admin' && user.role !== 'editor')) {
+
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            if (!userData || (userData.role !== 'admin' && userData.role !== 'editor')) {
                 window.location.href = '../index.html';
                 return;
             }
-            
-            return token;
         }
 
-        // API istekleri için header oluştur
+        // API istekleri için header'ları hazırla
         function getHeaders() {
-            const token = checkAuth();
+            const token = localStorage.getItem('token');
             return {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             };
         }
-
-        // Sayfa yüklendiğinde
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-            loadGallery();
-        });
 
         // Galeri görsellerini yükle
         async function loadGallery() {
@@ -297,130 +242,143 @@
                 const response = await fetch(`${API_URL}/gallery`, {
                     headers: getHeaders()
                 });
-                
+
                 if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = 'login.html';
-                        return;
-                    }
-                    const error = await response.json();
-                    throw new Error(error.error || 'Galeri yüklenirken bir hata oluştu');
+                    const errorText = await response.text();
+                    throw new Error(`Galeri yüklenirken bir hata oluştu: ${response.status} ${response.statusText} - ${errorText}`);
                 }
-                
+
                 allGalleryItems = await response.json();
                 displayGallery();
+                displayPagination();
             } catch (error) {
-                console.error('Hata:', error);
-                alert('Galeri yüklenirken bir hata oluştu: ' + error.message);
+                console.error('Galeri yükleme hatası:', error);
+                alert('Galeri yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.');
             }
         }
 
-        // Galeri görsellerini görüntüle
+        // Galeri görsellerini göster
         function displayGallery() {
-            const container = document.querySelector('.row');
-            container.innerHTML = '';
-
+            const galleryContainer = document.getElementById('galleryContainer');
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
-            const paginatedItems = allGalleryItems.slice(startIndex, endIndex);
+            const itemsToShow = allGalleryItems.slice(startIndex, endIndex);
 
-            paginatedItems.forEach(item => {
-                const col = document.createElement('div');
-                col.className = 'col-md-4';
-                col.innerHTML = `
-                    <div class="gallery-item">
-                        <img src="${item.image}" alt="${item.title}">
-                        <div class="overlay">
-                            <button class="btn btn-info text-white" onclick="editGalleryItem(${item.id})">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteGalleryItem(${item.id})">
-                                <i class="fas fa-trash"></i>
-                            </button>
+            if (itemsToShow.length === 0) {
+                galleryContainer.innerHTML = '<div class="alert alert-info">Henüz galeri görseli bulunmamaktadır.</div>';
+                return;
+            }
+
+            galleryContainer.innerHTML = itemsToShow.map(item => `
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <img src="${item.image}" class="card-img-top" alt="${item.title}" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title">${item.title}</h5>
+                            <p class="card-text">${item.description || ''}</p>
+                            <p class="card-text"><small class="text-muted">Kategori: ${item.category}</small></p>
+                            <div class="btn-group">
+                                <button class="btn btn-primary btn-sm" onclick="editGalleryItem(${item.id})">Düzenle</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteGalleryItem(${item.id})">Sil</button>
+                            </div>
                         </div>
                     </div>
-                `;
-                container.appendChild(col);
-            });
-
-            displayPagination();
+                </div>
+            `).join('');
         }
 
         // Sayfalama
         function displayPagination() {
-            const pagination = document.querySelector('.pagination');
-            pagination.innerHTML = '';
-
             const totalPages = Math.ceil(allGalleryItems.length / itemsPerPage);
+            const paginationContainer = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
 
+            let paginationHTML = '<ul class="pagination justify-content-center">';
+            
             // Önceki sayfa
-            const prevLi = document.createElement('li');
-            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-            prevLi.innerHTML = `
-                <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Önceki</a>
+            paginationHTML += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Önceki</a>
+                </li>
             `;
-            pagination.appendChild(prevLi);
 
             // Sayfa numaraları
             for (let i = 1; i <= totalPages; i++) {
-                const li = document.createElement('li');
-                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-                li.innerHTML = `
-                    <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                paginationHTML += `
+                    <li class="page-item ${currentPage === i ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                    </li>
                 `;
-                pagination.appendChild(li);
             }
 
             // Sonraki sayfa
-            const nextLi = document.createElement('li');
-            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-            nextLi.innerHTML = `
-                <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Sonraki</a>
+            paginationHTML += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Sonraki</a>
+                </li>
             `;
-            pagination.appendChild(nextLi);
+
+            paginationHTML += '</ul>';
+            paginationContainer.innerHTML = paginationHTML;
         }
 
         // Sayfa değiştir
         function changePage(page) {
-            if (page < 1 || page > Math.ceil(allGalleryItems.length / itemsPerPage)) return;
+            if (page < 1 || page > Math.ceil(allGalleryItems.length / itemsPerPage)) {
+                return;
+            }
             currentPage = page;
             displayGallery();
+            displayPagination();
         }
 
         // Galeri görseli düzenle
         async function editGalleryItem(id) {
+            const item = allGalleryItems.find(item => item.id === id);
+            if (!item) return;
+
+            const title = prompt('Başlık:', item.title);
+            if (!title) return;
+
+            const description = prompt('Açıklama:', item.description || '');
+            const category = prompt('Kategori:', item.category);
+            if (!category) return;
+
+            const status = confirm('Görsel aktif olsun mu?');
+
             try {
                 const response = await fetch(`${API_URL}/gallery/${id}`, {
-                    headers: getHeaders()
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        title,
+                        description,
+                        category,
+                        status
+                    })
                 });
-                
+
                 if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = 'login.html';
-                        return;
-                    }
-                    const error = await response.json();
-                    throw new Error(error.error || 'Görsel bilgileri alınırken bir hata oluştu');
+                    throw new Error('Görsel güncellenirken bir hata oluştu');
                 }
-                
-                const item = await response.json();
-                
-                document.getElementById('gorselBaslik').value = item.title;
-                document.getElementById('gorselKategori').value = item.category;
-                document.getElementById('gorselAciklama').value = item.description;
-                document.getElementById('gorselDurum').checked = item.status === 1;
-                
-                const modal = new bootstrap.Modal(document.getElementById('yeniGaleriModal'));
-                modal.show();
+
+                alert('Görsel başarıyla güncellendi');
+                loadGallery();
             } catch (error) {
-                console.error('Hata:', error);
-                alert(error.message || 'Görsel bilgileri alınırken bir hata oluştu');
+                console.error('Görsel güncelleme hatası:', error);
+                alert('Görsel güncellenirken bir hata oluştu');
             }
         }
 
         // Galeri görseli sil
         async function deleteGalleryItem(id) {
-            if (!confirm('Bu görseli silmek istediğinizden emin misiniz?')) return;
+            if (!confirm('Bu görseli silmek istediğinizden emin misiniz?')) {
+                return;
+            }
 
             try {
                 const response = await fetch(`${API_URL}/gallery/${id}`, {
@@ -429,95 +387,92 @@
                 });
 
                 if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = 'login.html';
-                        return;
-                    }
-                    const error = await response.json();
-                    throw new Error(error.error || 'Görsel silinirken bir hata oluştu');
+                    throw new Error('Görsel silinirken bir hata oluştu');
                 }
 
-                alert('Görsel başarıyla silindi!');
+                alert('Görsel başarıyla silindi');
                 loadGallery();
             } catch (error) {
-                console.error('Hata:', error);
-                alert(error.message || 'Görsel silinirken bir hata oluştu');
+                console.error('Görsel silme hatası:', error);
+                alert('Görsel silinirken bir hata oluştu');
             }
         }
 
         // Yeni görsel kaydet
-        document.getElementById('gorselKaydet').addEventListener('click', async function() {
-            const form = document.getElementById('yeniGaleriForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
+        async function gorselKaydet(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            const title = formData.get('title');
+            const description = formData.get('description');
+            const category = formData.get('category');
+            const status = formData.get('status') === 'on';
+            const image = formData.get('image');
+
+            if (!title || !category || !image) {
+                alert('Lütfen tüm zorunlu alanları doldurun');
                 return;
             }
-
-            const formData = new FormData();
-            formData.append('title', document.getElementById('gorselBaslik').value);
-            formData.append('category', document.getElementById('gorselKategori').value);
-            formData.append('description', document.getElementById('gorselAciklama').value);
-            formData.append('status', document.getElementById('gorselDurum').checked ? 1 : 0);
-            formData.append('image', document.getElementById('gorselDosya').files[0]);
 
             try {
                 const response = await fetch(`${API_URL}/gallery`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${checkAuth()}`
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
                     body: formData
                 });
 
+                const result = await response.json();
+
                 if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = 'login.html';
-                        return;
-                    }
-                    const error = await response.json();
-                    throw new Error(error.error || 'Görsel kaydedilirken bir hata oluştu');
+                    throw new Error(result.error || 'Görsel eklenirken bir hata oluştu');
                 }
 
-                alert('Görsel başarıyla kaydedildi!');
+                alert(result.message || 'Görsel başarıyla eklendi');
                 
-                // Modal'ı kapat ve formu temizle
+                // Modal'ı kapat
                 const modal = bootstrap.Modal.getInstance(document.getElementById('yeniGaleriModal'));
                 modal.hide();
+                
+                // Formu temizle
                 form.reset();
-
+                
                 // Galeri listesini yenile
                 loadGallery();
             } catch (error) {
-                console.error('Hata:', error);
-                alert(error.message || 'Görsel kaydedilirken bir hata oluştu');
+                console.error('Görsel ekleme hatası:', error);
+                alert(error.message || 'Görsel eklenirken bir hata oluştu');
             }
-        });
+        }
 
-        // Çıkış yapma işlevi
-        document.getElementById('logoutBtn').addEventListener('click', async function(e) {
-            e.preventDefault();
-            if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
-                try {
-                    const response = await fetch(`${API_URL}/logout`, {
-                        method: 'POST',
-                        headers: getHeaders()
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error('Çıkış yapılırken bir hata oluştu');
-                    }
-                    
-                    // Local storage'ı temizle
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    
-                    // Login sayfasına yönlendir
-                    window.location.href = 'login.html';
-                } catch (error) {
-                    console.error('Çıkış yapma hatası:', error);
-                    alert('Çıkış yapılırken bir hata oluştu');
+        // Çıkış yap
+        async function logout() {
+            try {
+                const response = await fetch(`${API_URL}/logout`, {
+                    method: 'POST',
+                    headers: getHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error('Çıkış yapılırken bir hata oluştu');
                 }
+
+                localStorage.removeItem('token');
+                localStorage.removeItem('userData');
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Çıkış yapma hatası:', error);
+                alert('Çıkış yapılırken bir hata oluştu');
             }
+        }
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadGallery();
         });
     </script>
 </body>

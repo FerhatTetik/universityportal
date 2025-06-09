@@ -107,18 +107,6 @@ INSERT INTO news (title, content, image, category, publish_date, status, created
 VALUES (?, ?, ?, ?, ?, ?, ?)
 ''', news)
 
-# Örnek galeri görselleri
-gallery = [
-    ('Kampüs Görünümü', 'Ana kampüs binası', 'images/gallery1.jpg', 'Kampüs', 1, 1),
-    ('Mezuniyet Töreni', '2024 Bahar dönemi mezuniyet töreni', 'images/gallery2.jpg', 'Etkinlik', 1, 2),
-    ('Laboratuvar Çalışması', 'Öğrenciler laboratuvarda deney yapıyor', 'images/gallery3.jpg', 'Akademik', 0, 1)
-]
-
-cursor.executemany('''
-INSERT INTO gallery (title, description, image, category, status, created_by)
-VALUES (?, ?, ?, ?, ?, ?)
-''', gallery)
-
 # Değişiklikleri kaydet ve bağlantıyı kapat
 conn.commit()
 conn.close()

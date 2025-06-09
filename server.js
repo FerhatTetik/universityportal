@@ -3,15 +3,67 @@ const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const fileUpload = require('express-fileupload');
+const path = require('path');
+const fs = require('fs');
+const WebSocket = require('ws');
 
 const app = express();
 const port = 3000;
 const JWT_SECRET = 'gizli-anahtar-123'; // Gerçek uygulamada bu değer güvenli bir şekilde saklanmalı
 
+// WebSocket sunucusu oluştur
+const wss = new WebSocket.Server({ port: 3001 });
+
+// Online kullanıcıları takip etmek için
+let onlineUsers = new Set();
+
+wss.on('connection', (ws) => {
+    // Yeni kullanıcı bağlandığında
+    onlineUsers.add(ws);
+    
+    // Tüm bağlı istemcilere güncel online kullanıcı sayısını gönder
+    broadcastOnlineUsers();
+    
+    ws.on('close', () => {
+        // Kullanıcı bağlantısı kesildiğinde
+        onlineUsers.delete(ws);
+        broadcastOnlineUsers();
+    });
+});
+
+// Tüm bağlı istemcilere online kullanıcı sayısını gönder
+function broadcastOnlineUsers() {
+    const count = onlineUsers.size;
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+                type: 'onlineUsers',
+                count: count
+            }));
+        }
+    });
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(fileUpload({
+    createParentPath: true,
+    limits: { 
+        fileSize: 50 * 1024 * 1024 // 50MB max file size
+    }
+}));
 app.use(express.static('public'));
+
+// Uploads klasörünü statik olarak sun
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Uploads klasörünü oluştur
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Veritabanı bağlantısı
 const db = new sqlite3.Database('campus.db', (err) => {
@@ -58,9 +110,30 @@ const db = new sqlite3.Database('campus.db', (err) => {
                 image TEXT NOT NULL,
                 category TEXT NOT NULL,
                 status INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        `);
+        `, (err) => {
+            if (err) {
+                console.error('Galeri tablosu oluşturulurken hata:', err);
+                return;
+            }
+        });
+
+        // Ziyaretçi sayacı tablosunu oluştur
+        db.run(`
+            CREATE TABLE IF NOT EXISTS visitors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                count INTEGER DEFAULT 0,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) {
+                console.error('Ziyaretçi sayacı tablosu oluşturulurken hata:', err);
+                return;
+            }
+            // İlk kaydı oluştur
+            db.run(`INSERT OR IGNORE INTO visitors (count) VALUES (0)`);
+        });
 
         // Kullanıcılar tablosunu oluştur
         db.run(`
@@ -356,98 +429,122 @@ app.get('/api/news', (req, res) => {
 
 // Galeri görsellerini getir
 app.get('/api/gallery', (req, res) => {
+    console.log('Galeri görselleri isteği alındı');
+    
     const query = `
         SELECT * FROM gallery 
         WHERE status = 1 
         ORDER BY created_at DESC
     `;
-    
+
     db.all(query, [], (err, rows) => {
         if (err) {
             console.error('Galeri görselleri getirilirken hata oluştu:', err);
-            res.status(500).json({ error: err.message });
-            return;
+            return res.status(500).json({ error: 'Galeri görselleri getirilemedi' });
         }
-        res.json(rows || []);
+
+        if (!rows || rows.length === 0) {
+            console.log('Galeri görseli bulunamadı');
+            return res.json([]);
+        }
+
+        console.log(`${rows.length} adet galeri görseli bulundu`);
+        res.json(rows);
     });
 });
 
-// Tekil galeri görseli getir
-app.get('/api/gallery/:id', authenticateToken, requireEditorOrAdmin, (req, res) => {
-    const query = `
-        SELECT * FROM gallery 
-        WHERE id = ?
-    `;
-    
-    db.get(query, [req.params.id], (err, row) => {
-        if (err) {
-            console.error('Galeri görseli getirilirken hata oluştu:', err);
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        if (!row) {
-            res.status(404).json({ error: 'Görsel bulunamadı' });
-            return;
-        }
-        res.json(row);
-    });
-});
-
-// Yeni galeri görseli ekle
+// Galeri görseli ekle
 app.post('/api/gallery', authenticateToken, requireEditorOrAdmin, (req, res) => {
-    const { title, description, image, category, status } = req.body;
-    
-    const query = `
-        INSERT INTO gallery (title, description, image, category, status)
-        VALUES (?, ?, ?, ?, ?)
-    `;
-    
-    db.run(query, [title, description, image, category, status], function(err) {
+    console.log('Galeri görseli ekleme isteği alındı:', req.body);
+    console.log('Dosyalar:', req.files);
+
+    const { title, description, category, status } = req.body;
+    const image = req.files ? req.files.image : null;
+
+    if (!title || !category || !image) {
+        console.error('Eksik veri:', { title, category, image });
+        return res.status(400).json({ error: 'Başlık, kategori ve görsel gereklidir' });
+    }
+
+    // Görseli kaydet
+    const imagePath = `/uploads/${Date.now()}-${image.name}`;
+    const fullPath = path.join(__dirname, imagePath);
+
+    image.mv(fullPath, (err) => {
         if (err) {
-            console.error('Galeri görseli eklenirken hata oluştu:', err);
-            res.status(500).json({ error: err.message });
-            return;
+            console.error('Görsel kaydedilirken hata oluştu:', err);
+            return res.status(500).json({ error: 'Görsel kaydedilemedi' });
         }
-        res.json({
-            id: this.lastID,
-            title,
-            description,
-            image,
-            category,
-            status
+
+        // Veritabanına kaydet
+        const query = `
+            INSERT INTO gallery (title, description, image, category, status)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+
+        db.run(query, [title, description, imagePath, category, status ? 1 : 0], function(err) {
+            if (err) {
+                console.error('Galeri görseli eklenirken hata oluştu:', err);
+                return res.status(500).json({ error: 'Görsel veritabanına eklenemedi' });
+            }
+
+            console.log('Görsel başarıyla eklendi, ID:', this.lastID);
+            res.json({ 
+                id: this.lastID,
+                message: 'Görsel başarıyla eklendi'
+            });
         });
     });
 });
 
 // Galeri görseli güncelle
 app.put('/api/gallery/:id', authenticateToken, requireEditorOrAdmin, (req, res) => {
-    const { title, description, image, category, status } = req.body;
-    
-    const query = `
+    const { title, description, category, status } = req.body;
+    const image = req.files ? req.files.image : null;
+
+    if (!title || !category) {
+        return res.status(400).json({ error: 'Başlık ve kategori gereklidir' });
+    }
+
+    let query = `
         UPDATE gallery 
-        SET title = ?, description = ?, image = ?, category = ?, status = ?
-        WHERE id = ?
+        SET title = ?, description = ?, category = ?, status = ?
     `;
-    
-    db.run(query, [title, description, image, category, status, req.params.id], function(err) {
-        if (err) {
-            console.error('Galeri görseli güncellenirken hata oluştu:', err);
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        if (this.changes === 0) {
-            res.status(404).json({ error: 'Görsel bulunamadı' });
-            return;
-        }
-        res.json({
-            id: req.params.id,
-            title,
-            description,
-            image,
-            category,
-            status
+    let params = [title, description, category, status ? 1 : 0];
+
+    // Eğer yeni görsel yüklendiyse
+    if (image) {
+        const imagePath = `/uploads/${Date.now()}-${image.name}`;
+        image.mv(`.${imagePath}`, (err) => {
+            if (err) {
+                console.error('Görsel kaydedilirken hata oluştu:', err);
+                return res.status(500).json({ error: 'Görsel kaydedilemedi' });
+            }
+
+            query += ', image = ?';
+            params.push(imagePath);
+            params.push(req.params.id);
+
+            db.run(query + ' WHERE id = ?', params, function(err) {
+                if (err) {
+                    console.error('Galeri görseli güncellenirken hata oluştu:', err);
+                    res.status(500).json({ error: err.message });
+                    return;
+                }
+                res.json({ message: 'Görsel başarıyla güncellendi' });
+            });
         });
-    });
+    } else {
+        params.push(req.params.id);
+        db.run(query + ' WHERE id = ?', params, function(err) {
+            if (err) {
+                console.error('Galeri görseli güncellenirken hata oluştu:', err);
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            res.json({ message: 'Görsel başarıyla güncellendi' });
+        });
+    }
 });
 
 // Galeri görseli sil
@@ -564,6 +661,33 @@ app.delete('/api/news/:id', (req, res) => {
 app.post('/api/logout', authenticateToken, (req, res) => {
     // Token'ı blacklist'e ekleyebilir veya client tarafında silinebilir
     res.json({ message: 'Başarıyla çıkış yapıldı' });
+});
+
+// Ziyaretçi sayısını artır
+app.post('/api/visitors/increment', (req, res) => {
+    db.run(`UPDATE visitors SET count = count + 1, last_updated = CURRENT_TIMESTAMP WHERE id = 1`, function(err) {
+        if (err) {
+            console.error('Ziyaretçi sayısı artırılırken hata:', err);
+            return res.status(500).json({ error: 'Ziyaretçi sayısı artırılamadı' });
+        }
+        res.json({ success: true });
+    });
+});
+
+// Ziyaretçi sayısını getir
+app.get('/api/visitors', (req, res) => {
+    db.get('SELECT count, last_updated FROM visitors WHERE id = 1', (err, row) => {
+        if (err) {
+            console.error('Ziyaretçi sayısı alınırken hata:', err);
+            return res.status(500).json({ error: 'Ziyaretçi sayısı alınamadı' });
+        }
+        res.json(row || { count: 0, last_updated: new Date() });
+    });
+});
+
+// Online kullanıcı sayısını getir
+app.get('/api/online-users', (req, res) => {
+    res.json({ count: onlineUsers.size });
 });
 
 // Sunucuyu başlat

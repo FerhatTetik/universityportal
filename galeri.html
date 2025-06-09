@@ -107,67 +107,108 @@
         const API_URL = 'http://localhost:3000/api';
         let allGalleryItems = [];
 
-        // Galeri öğelerini yükle
+        // Galeri görsellerini yükle
         async function loadGallery() {
             try {
-                const response = await fetch(`${API_URL}/gallery`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Galeri yüklenirken bir hata oluştu');
+                console.log('Galeri yükleme başladı');
+                const response = await fetch(`${API_URL}/gallery`);
+
+                console.log('API yanıtı alındı:', response.status);
+                const data = await response.json();
+                console.log('Gelen veri:', data);
+
+                if (!Array.isArray(data)) {
+                    throw new Error('Geçersiz veri formatı');
                 }
-                
-                allGalleryItems = await response.json();
-                filterGallery('all');
+
+                allGalleryItems = data;
+                displayGallery();
             } catch (error) {
-                console.error('Galeri yüklenirken hata oluştu:', error);
-                document.getElementById('gallery-container').innerHTML = 
-                    `<div class="alert alert-danger">Galeri yüklenirken bir hata oluştu: ${error.message}</div>`;
+                console.error('Galeri yükleme hatası:', error);
+                const galleryContainer = document.getElementById('gallery-container');
+                galleryContainer.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            Galeri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.
+                            <br>
+                            Hata detayı: ${error.message}
+                        </div>
+                    </div>
+                `;
             }
         }
 
-        // Galeri öğelerini görüntüle
-        function displayGallery(items) {
-            const container = document.getElementById('gallery-container');
-            if (items.length === 0) {
-                container.innerHTML = '<div class="alert alert-info">Gösterilecek görsel bulunamadı.</div>';
+        // Galeri görsellerini göster
+        function displayGallery() {
+            console.log('Galeri görüntüleme başladı');
+            const galleryContainer = document.getElementById('gallery-container');
+            
+            if (!allGalleryItems || allGalleryItems.length === 0) {
+                console.log('Görüntülenecek galeri öğesi yok');
+                galleryContainer.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            Henüz galeri görseli bulunmamaktadır.
+                            <br>
+                            <small>Not: Test görselleri için lütfen admin panelinden görsel ekleyin.</small>
+                        </div>
+                    </div>
+                `;
                 return;
             }
 
-            container.innerHTML = items.map(item => `
-                <div class="col-md-4 gallery-item">
-                    <img src="${item.image}" alt="${item.title}" class="img-fluid">
-                    <div class="mt-2">
-                        <h5>${item.title}</h5>
-                        <p class="text-muted">${item.description}</p>
-                        <span class="badge bg-primary">${item.category}</span>
+            console.log(`${allGalleryItems.length} adet galeri öğesi görüntülenecek`);
+            galleryContainer.innerHTML = allGalleryItems.map(item => `
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <img src="${item.image}" class="card-img-top" alt="${item.title}" 
+                             style="height: 200px; object-fit: cover;"
+                             onerror="this.onerror=null;this.src='https://via.placeholder.com/300x200?text=Görsel+Bulunamadı';">
+                        <div class="card-body">
+                            <h5 class="card-title">${item.title}</h5>
+                            <p class="card-text">${item.description || ''}</p>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="fas fa-tag me-1"></i>${item.category}
+                                </small>
+                            </p>
+                        </div>
                     </div>
                 </div>
             `).join('');
         }
 
-        // Galeriyi filtrele
+        // Kategoriye göre filtrele
         function filterGallery(category) {
-            // Aktif buton stilini güncelle
-            document.querySelectorAll('.gallery-category .btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-
             const filteredItems = category === 'all' 
                 ? allGalleryItems 
                 : allGalleryItems.filter(item => item.category === category);
+            
+            const galleryContainer = document.getElementById('gallery-container');
+            
+            if (filteredItems.length === 0) {
+                galleryContainer.innerHTML = '<div class="alert alert-info">Bu kategoride görsel bulunmamaktadır.</div>';
+                return;
+            }
 
-            displayGallery(filteredItems);
+            galleryContainer.innerHTML = filteredItems.map(item => `
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <img src="${item.image}" class="card-img-top" alt="${item.title}" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title">${item.title}</h5>
+                            <p class="card-text">${item.description || ''}</p>
+                            <p class="card-text"><small class="text-muted">Kategori: ${item.category}</small></p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        // Sayfa yüklendiğinde galeriyi yükle
-        document.addEventListener('DOMContentLoaded', loadGallery);
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGallery();
+        });
     </script>
 </body>
 </html> 

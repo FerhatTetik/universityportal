@@ -97,29 +97,37 @@
                     <div class="col-md-3">
                         <div class="stat-card">
                             <i class="fas fa-bullhorn text-primary"></i>
-                            <h3>24</h3>
+                            <h3 id="activeAnnouncementsCount">0</h3>
                             <p class="text-muted mb-0">Aktif Duyuru</p>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
                             <i class="fas fa-newspaper text-success"></i>
-                            <h3>156</h3>
+                            <h3 id="totalNewsCount">0</h3>
                             <p class="text-muted mb-0">Toplam Haber</p>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <i class="fas fa-images text-info"></i>
-                            <h3>89</h3>
-                            <p class="text-muted mb-0">Galeri Görseli</p>
-                        </div>
-                    </div>
+                    
                     <div class="col-md-3">
                         <div class="stat-card">
                             <i class="fas fa-users text-warning"></i>
                             <h3>12</h3>
                             <p class="text-muted mb-0">Aktif Kullanıcı</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <i class="fas fa-eye text-danger"></i>
+                            <h3 id="visitorCount">0</h3>
+                            <p class="text-muted mb-0">Toplam Ziyaretçi</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <i class="fas fa-circle text-success"></i>
+                            <h3 id="onlineUsersCount">0</h3>
+                            <p class="text-muted mb-0">Online Kullanıcı</p>
                         </div>
                     </div>
                 </div>
@@ -132,28 +140,8 @@
                                 <h5 class="mb-0">Son Aktiviteler</h5>
                             </div>
                             <div class="card-body">
-                                <div class="list-group">
-                                    <a href="#" class="list-group-item list-group-item-action">
-                                        <div class="d-flex w-100 justify-content-between">
-                                            <h6 class="mb-1">Yeni Duyuru Eklendi</h6>
-                                            <small>3 dakika önce</small>
-                                        </div>
-                                        <p class="mb-1">Kayıt yenileme tarihleri duyurusu yayınlandı.</p>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action">
-                                        <div class="d-flex w-100 justify-content-between">
-                                            <h6 class="mb-1">Yeni Haber Eklendi</h6>
-                                            <small>1 saat önce</small>
-                                        </div>
-                                        <p class="mb-1">Uluslararası araştırma projesi haberi eklendi.</p>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action">
-                                        <div class="d-flex w-100 justify-content-between">
-                                            <h6 class="mb-1">Galeri Güncellendi</h6>
-                                            <small>2 saat önce</small>
-                                        </div>
-                                        <p class="mb-1">5 yeni görsel galeriye eklendi.</p>
-                                    </a>
+                                <div class="list-group" id="recentActivities">
+                                    <!-- Son aktiviteler JavaScript ile buraya eklenecek -->
                                 </div>
                             </div>
                         </div>
@@ -165,16 +153,16 @@
                             </div>
                             <div class="card-body">
                                 <div class="d-grid gap-2">
-                                    <button class="btn btn-primary">
+                                    <button class="btn btn-primary" onclick="window.location.href='duyurular.html?action=new'">
                                         <i class="fas fa-plus me-2"></i>Yeni Duyuru Ekle
                                     </button>
-                                    <button class="btn btn-success">
+                                    <button class="btn btn-success" onclick="window.location.href='haberler.html?action=new'">
                                         <i class="fas fa-plus me-2"></i>Yeni Haber Ekle
                                     </button>
-                                    <button class="btn btn-info text-white">
+                                    <button class="btn btn-info text-white" onclick="window.location.href='galeri.html?action=new'">
                                         <i class="fas fa-upload me-2"></i>Galeri Görseli Yükle
                                     </button>
-                                    <button class="btn btn-warning text-white">
+                                    <button class="btn btn-warning text-white" id="newUserBtn" onclick="window.location.href='kullanicilar.html?action=new'" style="display: none;">
                                         <i class="fas fa-user-plus me-2"></i>Yeni Kullanıcı Ekle
                                     </button>
                                 </div>
@@ -188,13 +176,105 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Çıkış yapma işlevi
-        document.getElementById('logoutBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
-                window.location.href = 'login.html';
+        // API endpoint'leri
+        const API_URL = 'http://localhost:3000/api';
+
+        // İstatistikleri güncelle
+        async function updateStats() {
+            try {
+                // Aktif duyuruları getir
+                const announcementsResponse = await fetch(`${API_URL}/announcements`);
+                const announcements = await announcementsResponse.json();
+                const activeAnnouncements = announcements.filter(a => a.status === 1).length;
+                document.getElementById('activeAnnouncementsCount').textContent = activeAnnouncements;
+
+                // Toplam haberleri getir
+                const newsResponse = await fetch(`${API_URL}/news`);
+                const news = await newsResponse.json();
+                document.getElementById('totalNewsCount').textContent = news.length;
+
+                // Son aktiviteleri getir
+                const activities = [];
+                
+                // Son duyurular
+                const recentAnnouncements = announcements
+                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                    .slice(0, 3);
+                
+                recentAnnouncements.forEach(announcement => {
+                    activities.push({
+                        type: 'duyuru',
+                        title: announcement.title,
+                        date: new Date(announcement.created_at),
+                        content: announcement.content
+                    });
+                });
+
+                // Son haberler
+                const recentNews = news
+                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                    .slice(0, 3);
+                
+                recentNews.forEach(news => {
+                    activities.push({
+                        type: 'haber',
+                        title: news.title,
+                        date: new Date(news.created_at),
+                        content: news.content
+                    });
+                });
+
+                // Aktiviteleri tarihe göre sırala
+                activities.sort((a, b) => b.date - a.date);
+
+                // Son aktiviteleri göster
+                const activitiesContainer = document.getElementById('recentActivities');
+                activitiesContainer.innerHTML = activities.slice(0, 5).map(activity => `
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Yeni ${activity.type === 'duyuru' ? 'Duyuru' : 'Haber'} Eklendi</h6>
+                            <small>${formatDate(activity.date)}</small>
+                        </div>
+                        <p class="mb-1">${activity.title}</p>
+                    </a>
+                `).join('');
+
+            } catch (error) {
+                console.error('İstatistikler güncellenirken hata:', error);
             }
-        });
+        }
+
+        // Tarih formatla
+        function formatDate(date) {
+            const now = new Date();
+            const diff = now - date;
+            
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (minutes < 60) {
+                return `${minutes} dakika önce`;
+            } else if (hours < 24) {
+                return `${hours} saat önce`;
+            } else {
+                return `${days} gün önce`;
+            }
+        }
+
+        // WebSocket bağlantısı
+        const ws = new WebSocket('ws://localhost:3001');
+        
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'onlineUsers') {
+                document.getElementById('onlineUsersCount').textContent = data.count;
+            }
+        };
+
+        ws.onclose = function() {
+            console.log('WebSocket bağlantısı kesildi');
+        };
 
         // Token kontrolü
         function checkAuth() {
@@ -222,9 +302,36 @@
             // Kullanıcı rolüne göre menü öğelerini göster/gizle
             const user = JSON.parse(localStorage.getItem('user'));
             const kullanicilarLink = document.querySelector('a[href="kullanicilar.html"]').parentElement;
+            const newUserBtn = document.getElementById('newUserBtn');
             
-            if (user.role !== 'admin') {
+            if (user.role === 'admin') {
+                kullanicilarLink.style.display = 'block';
+                newUserBtn.style.display = 'block';
+            } else {
                 kullanicilarLink.style.display = 'none';
+                newUserBtn.style.display = 'none';
+            }
+
+            // İstatistikleri güncelle
+            updateStats();
+
+            // Her 30 saniyede bir istatistikleri güncelle
+            setInterval(updateStats, 30000);
+
+            // Ziyaretçi sayısını getir
+            fetch('http://localhost:3000/api/visitors')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('visitorCount').textContent = data.count;
+                })
+                .catch(error => console.error('Ziyaretçi sayısı alınamadı:', error));
+        });
+
+        // Çıkış yapma işlevi
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                window.location.href = 'login.html';
             }
         });
     </script>
