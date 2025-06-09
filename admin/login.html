@@ -34,7 +34,7 @@
                 <h1>Kampüs Portalı</h1>
                 <p class="text-muted">Yönetici Girişi</p>
             </div>
-            <form id="loginForm">
+            <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="mb-3">
                     <label for="username" class="form-label">Kullanıcı Adı</label>
                     <input type="text" class="form-control" id="username" required>
@@ -53,40 +53,49 @@
 
     <script>
         const API_URL = 'http://localhost:3000/api';
+        let csrfToken = '';
 
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
+        document.addEventListener('DOMContentLoaded', async () => {
+            // CSRF token'ı al
+            try {
+                const response = await fetch(`${API_URL}/csrf-token`, { credentials: 'include' });
+                const data = await response.json();
+                csrfToken = data.csrfToken;
+            } catch (error) {
+                console.error('CSRF token alınamadı:', error);
+            }
+        });
+
+        async function handleLogin(event) {
+            event.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('errorMessage');
-            
+
             try {
+                // Login isteği
                 const response = await fetch(`${API_URL}/login`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
                     },
+                    credentials: 'include',
                     body: JSON.stringify({ username, password })
                 });
 
                 const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Giriş başarısız');
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = '/admin/yonetim';
+                } else {
+                    alert(data.error || 'Giriş başarısız');
                 }
-
-                // Token'ı localStorage'a kaydet
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-
-                // Yönlendirme
-                window.location.href = 'dashboard.html';
             } catch (error) {
-                errorMessage.textContent = error.message;
-                errorMessage.style.display = 'block';
+                console.error('Login hatası:', error);
+                alert('Giriş yapılırken bir hata oluştu');
             }
-        });
+        }
     </script>
 </body>
 </html> 

@@ -127,6 +127,23 @@
     <script>
         // API endpoint'i
         const API_URL = 'http://localhost:3000/api';
+        let csrfToken = '';
+
+        // CSRF token'ı al
+        async function getCsrfToken() {
+            try {
+                const response = await fetch(`${API_URL}/csrf-token`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                csrfToken = data.csrfToken;
+            } catch (error) {
+                console.error('CSRF token alınamadı:', error);
+            }
+        }
+
+        // Sayfa yüklendiğinde CSRF token'ı al
+        document.addEventListener('DOMContentLoaded', getCsrfToken);
 
         // Yeni duyuru kaydet
         async function saveAnnouncement() {
@@ -149,14 +166,19 @@
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
                     },
+                    credentials: 'include',
                     body: JSON.stringify(announcement)
                 });
 
                 if (response.ok) {
                     alert('Duyuru başarıyla kaydedildi!');
-                    window.location.href = 'duyurular.html';
+                    window.location.href = '/admin/duyurular';
+                } else if (response.status === 403) {
+                    await getCsrfToken();
+                    alert('Lütfen tekrar deneyin.');
                 } else {
                     throw new Error('Kaydetme işlemi başarısız oldu');
                 }
@@ -170,7 +192,7 @@
         document.getElementById('logoutBtn').addEventListener('click', function(e) {
             e.preventDefault();
             if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
-                window.location.href = 'login.html';
+                window.location.href = '/admin/login';
             }
         });
     </script>

@@ -44,12 +44,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="duyurular.html">
+                        <a class="nav-link" href="/admin/duyurular">
                             <i class="fas fa-bullhorn me-2"></i> Duyurular
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="haberler.html">
+                        <a class="nav-link active" href="/admin/haberler">
                             <i class="fas fa-newspaper me-2"></i> Haberler
                         </a>
                     </li>
@@ -59,7 +59,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="kullanicilar.html">
+                        <a class="nav-link" href="/admin/kullanicilar">
                             <i class="fas fa-users me-2"></i> Kullanıcılar
                         </a>
                     </li>
@@ -128,6 +128,23 @@
     <script>
         // API endpoint'i
         const API_URL = 'http://localhost:3000/api';
+        let csrfToken = '';
+
+        // CSRF token'ı al
+        async function getCsrfToken() {
+            try {
+                const response = await fetch(`${API_URL}/csrf-token`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                csrfToken = data.csrfToken;
+            } catch (error) {
+                console.error('CSRF token alınamadı:', error);
+            }
+        }
+
+        // Sayfa yüklendiğinde CSRF token'ı al
+        document.addEventListener('DOMContentLoaded', getCsrfToken);
 
         // Haber kaydet
         async function saveNews() {
@@ -137,19 +154,14 @@
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('title', document.getElementById('haberBaslik').value);
-            formData.append('category', document.getElementById('haberKategori').value);
-            formData.append('content', document.getElementById('haberIcerik').value);
-            formData.append('publish_date', document.getElementById('haberTarih').value);
-            formData.append('status', document.getElementById('haberDurum').checked);
-
             try {
                 const response = await fetch(`${API_URL}/news`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
                         title: document.getElementById('haberBaslik').value,
                         category: document.getElementById('haberKategori').value,
@@ -161,7 +173,10 @@
 
                 if (response.ok) {
                     alert('Haber başarıyla kaydedildi!');
-                    window.location.href = 'haberler.html';
+                    window.location.href = '/admin/haberler';
+                } else if (response.status === 403) {
+                    await getCsrfToken();
+                    alert('Lütfen tekrar deneyin.');
                 } else {
                     throw new Error('Kaydetme başarısız oldu');
                 }
@@ -175,7 +190,7 @@
         document.getElementById('logoutBtn').addEventListener('click', function(e) {
             e.preventDefault();
             if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
-                window.location.href = 'login.html';
+                window.location.href = '/admin/login';
             }
         });
     </script>

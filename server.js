@@ -7,10 +7,29 @@ const fileUpload = require('express-fileupload');
 const path = require('path');
 const fs = require('fs');
 const WebSocket = require('ws');
+const cookieParser = require('cookie-parser');
+const csrf = require('csurf');
 
 const app = express();
 const port = 3000;
 const JWT_SECRET = 'gizli-anahtar-123'; // Gerçek uygulamada bu değer güvenli bir şekilde saklanmalı
+
+// CSRF koruması için middleware
+const csrfProtection = csrf({ cookie: true, ignoreMethods: ['GET', 'HEAD', 'OPTIONS'] });
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
+app.use(express.json());
+app.use(cookieParser('gizli-bir-secret'));
+app.use(fileUpload({
+    createParentPath: true,
+    limits: { 
+        fileSize: 50 * 1024 * 1024 // 50MB max file size
+    }
+}));
+app.use(express.static('public'));
+app.use(csrfProtection);
 
 // WebSocket sunucusu oluştur
 const wss = new WebSocket.Server({ port: 3001 });
@@ -45,16 +64,10 @@ function broadcastOnlineUsers() {
     });
 }
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(fileUpload({
-    createParentPath: true,
-    limits: { 
-        fileSize: 50 * 1024 * 1024 // 50MB max file size
-    }
-}));
-app.use(express.static('public'));
+// CSRF token endpoint'i
+app.get('/api/csrf-token', (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
+});
 
 // Uploads klasörünü statik olarak sun
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -216,52 +229,63 @@ const requireEditorOrAdmin = (req, res, next) => {
 
 // Login endpoint'i
 app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return res.status(400).json({ error: 'Kullanıcı adı ve şifre gereklidir' });
-    }
-
-    const query = 'SELECT * FROM users WHERE username = ?';
-    
-    db.get(query, [username], async (err, user) => {
-        if (err) {
-            console.error('Login hatası:', err);
-            return res.status(500).json({ error: 'Sunucu hatası' });
+    console.log('Login isteği alındı');
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) {
+            console.log('Eksik kullanıcı adı veya şifre');
+            return res.status(400).json({ error: 'Kullanıcı adı ve şifre gereklidir' });
         }
-
-        if (!user) {
-            return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre' });
-        }
-
-        // Şifre kontrolü
-        const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) {
-            return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre' });
-        }
-
-        // JWT token oluştur
-        const token = jwt.sign(
-            { 
-                id: user.id, 
-                username: user.username,
-                role: user.role 
-            },
-            JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-
-        res.json({
-            token,
-            user: {
-                id: user.id,
-                username: user.username,
-                full_name: user.full_name,
-                email: user.email,
-                role: user.role
+        const query = 'SELECT * FROM users WHERE username = ?';
+        db.get(query, [username], async (err, user) => {
+            if (err) {
+                console.error('Login hatası:', err);
+                return res.status(500).json({ error: 'Sunucu hatası' });
             }
+            if (!user) {
+                console.log('Kullanıcı bulunamadı');
+                return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre' });
+            }
+            // Şifre kontrolü
+            const validPassword = await bcrypt.compare(password, user.password);
+            if (!validPassword) {
+                console.log('Geçersiz şifre');
+                return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre' });
+            }
+            // JWT token oluştur
+            const token = jwt.sign(
+                { 
+                    id: user.id, 
+                    username: user.username,
+                    role: user.role 
+                },
+                JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+            // CSRF token oluştur
+            let csrfToken = null;
+            try {
+                csrfToken = req.csrfToken();
+                console.log('CSRF token başarıyla oluşturuldu');
+            } catch (e) {
+                console.error('CSRF token oluşturulamadı:', e);
+            }
+            res.json({
+                token,
+                csrfToken,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    full_name: user.full_name,
+                    email: user.email,
+                    role: user.role
+                }
+            });
         });
-    });
+    } catch (error) {
+        console.error('Login endpoint genel hata:', error);
+        res.status(500).json({ error: 'Login endpoint genel hata' });
+    }
 });
 
 // Kullanıcıları getir (sadece admin)
@@ -688,6 +712,46 @@ app.get('/api/visitors', (req, res) => {
 // Online kullanıcı sayısını getir
 app.get('/api/online-users', (req, res) => {
     res.json({ count: onlineUsers.size });
+});
+
+// Admin klasörü altındaki sayfalar için route'lar
+app.get('/admin/haberler', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin', 'haberler.html'));
+});
+app.get('/admin/haber-ekle', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin', 'haber-ekle.html'));
+});
+app.get('/admin/duyurular', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin', 'duyurular.html'));
+});
+app.get('/admin/duyuru-ekle', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin', 'duyuru-ekle.html'));
+});
+app.get('/admin/galeri', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin', 'galeri.html'));
+});
+app.get('/admin/galeri-ekle', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin', 'galeri-ekle.html'));
+});
+app.get('/admin/giris', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin', 'login.html'));
+});
+app.get('/admin/yonetim', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin', 'dashboard.html'));
+});
+
+// Ana dizindeki sayfalar için route'lar
+app.get(['/','/home'], (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+app.get('/haberler', (req, res) => {
+    res.sendFile(path.join(__dirname, 'haberler.html'));
+});
+app.get('/duyurular', (req, res) => {
+    res.sendFile(path.join(__dirname, 'duyurular.html'));
+});
+app.get('/galeri', (req, res) => {
+    res.sendFile(path.join(__dirname, 'galeri.html'));
 });
 
 // Sunucuyu başlat

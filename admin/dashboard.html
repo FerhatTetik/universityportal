@@ -55,12 +55,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="duyurular.html">
+                        <a class="nav-link" href="/admin/duyurular">
                             <i class="fas fa-bullhorn me-2"></i> Duyurular
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="haberler.html">
+                        <a class="nav-link" href="/admin/haberler">
                             <i class="fas fa-newspaper me-2"></i> Haberler
                         </a>
                     </li>
@@ -70,7 +70,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="kullanicilar.html">
+                        <a class="nav-link" href="/admin/kullanicilar">
                             <i class="fas fa-users me-2"></i> Kullanıcılar
                         </a>
                     </li>
@@ -147,24 +147,20 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card">
+                        <div class="card mb-4">
                             <div class="card-header">
-                                <h5 class="mb-0">Hızlı İşlemler</h5>
+                                <h5 class="card-title mb-0">Hızlı İşlemler</h5>
                             </div>
                             <div class="card-body">
                                 <div class="d-grid gap-2">
-                                    <button class="btn btn-primary" onclick="window.location.href='duyurular.html?action=new'">
-                                        <i class="fas fa-plus me-2"></i>Yeni Duyuru Ekle
-                                    </button>
-                                    <button class="btn btn-success" onclick="window.location.href='haberler.html?action=new'">
-                                        <i class="fas fa-plus me-2"></i>Yeni Haber Ekle
-                                    </button>
-                                    <button class="btn btn-info text-white" onclick="window.location.href='galeri.html?action=new'">
-                                        <i class="fas fa-upload me-2"></i>Galeri Görseli Yükle
-                                    </button>
-                                    <button class="btn btn-warning text-white" id="newUserBtn" onclick="window.location.href='kullanicilar.html?action=new'" style="display: none;">
-                                        <i class="fas fa-user-plus me-2"></i>Yeni Kullanıcı Ekle
-                                    </button>
+                                    <a href="/admin/haber-ekle" class="btn btn-success">
+                                        <i class="fas fa-plus me-2"></i>Haber Ekle
+                                    </a>
+                                    </a>
+                                    <a href="/admin/duyuru-ekle" class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>Duyuru Ekle
+                                    </a>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -178,18 +174,52 @@
     <script>
         // API endpoint'leri
         const API_URL = 'http://localhost:3000/api';
+        let csrfToken = '';
+
+        // CSRF token'ı al
+        async function getCsrfToken() {
+            try {
+                const response = await fetch(`${API_URL}/csrf-token`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                csrfToken = data.csrfToken;
+            } catch (error) {
+                console.error('CSRF token alınamadı:', error);
+            }
+        }
+
+        // Fetch wrapper fonksiyonu
+        async function fetchWithCsrf(url, options = {}) {
+            const defaultOptions = {
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken
+                }
+            };
+
+            const response = await fetch(url, { ...defaultOptions, ...options });
+            if (response.status === 403) {
+                // CSRF token geçersiz, yeni token al
+                await getCsrfToken();
+                // İsteği tekrarla
+                return fetch(url, { ...defaultOptions, ...options });
+            }
+            return response;
+        }
 
         // İstatistikleri güncelle
         async function updateStats() {
             try {
                 // Aktif duyuruları getir
-                const announcementsResponse = await fetch(`${API_URL}/announcements`);
+                const announcementsResponse = await fetchWithCsrf(`${API_URL}/announcements`);
                 const announcements = await announcementsResponse.json();
                 const activeAnnouncements = announcements.filter(a => a.status === 1).length;
                 document.getElementById('activeAnnouncementsCount').textContent = activeAnnouncements;
 
                 // Toplam haberleri getir
-                const newsResponse = await fetch(`${API_URL}/news`);
+                const newsResponse = await fetchWithCsrf(`${API_URL}/news`);
                 const news = await newsResponse.json();
                 document.getElementById('totalNewsCount').textContent = news.length;
 
@@ -294,8 +324,17 @@
             return token;
         }
 
+        // JWT token kontrolü
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/admin/giris';
+        }
+
         // Sayfa yüklendiğinde
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // CSRF token'ı al
+            await getCsrfToken();
+
             const token = checkAuth();
             if (!token) return;
             
