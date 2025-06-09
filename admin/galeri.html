@@ -253,24 +253,270 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Çıkış yapma işlevi
-        document.getElementById('logoutBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+        const API_URL = 'http://localhost:3000/api';
+        let currentPage = 1;
+        const itemsPerPage = 9;
+        let allGalleryItems = [];
+
+        // Token kontrolü
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
                 window.location.href = 'login.html';
+                return;
+            }
+            
+            // Kullanıcı rolünü kontrol et
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user || (user.role !== 'admin' && user.role !== 'editor')) {
+                window.location.href = '../index.html';
+                return;
+            }
+            
+            return token;
+        }
+
+        // API istekleri için header oluştur
+        function getHeaders() {
+            const token = checkAuth();
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadGallery();
+        });
+
+        // Galeri görsellerini yükle
+        async function loadGallery() {
+            try {
+                const response = await fetch(`${API_URL}/gallery`, {
+                    headers: getHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    const error = await response.json();
+                    throw new Error(error.error || 'Galeri yüklenirken bir hata oluştu');
+                }
+                
+                allGalleryItems = await response.json();
+                displayGallery();
+            } catch (error) {
+                console.error('Hata:', error);
+                alert('Galeri yüklenirken bir hata oluştu: ' + error.message);
+            }
+        }
+
+        // Galeri görsellerini görüntüle
+        function displayGallery() {
+            const container = document.querySelector('.row');
+            container.innerHTML = '';
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedItems = allGalleryItems.slice(startIndex, endIndex);
+
+            paginatedItems.forEach(item => {
+                const col = document.createElement('div');
+                col.className = 'col-md-4';
+                col.innerHTML = `
+                    <div class="gallery-item">
+                        <img src="${item.image}" alt="${item.title}">
+                        <div class="overlay">
+                            <button class="btn btn-info text-white" onclick="editGalleryItem(${item.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteGalleryItem(${item.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(col);
+            });
+
+            displayPagination();
+        }
+
+        // Sayfalama
+        function displayPagination() {
+            const pagination = document.querySelector('.pagination');
+            pagination.innerHTML = '';
+
+            const totalPages = Math.ceil(allGalleryItems.length / itemsPerPage);
+
+            // Önceki sayfa
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Önceki</a>
+            `;
+            pagination.appendChild(prevLi);
+
+            // Sayfa numaraları
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                li.innerHTML = `
+                    <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                `;
+                pagination.appendChild(li);
+            }
+
+            // Sonraki sayfa
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Sonraki</a>
+            `;
+            pagination.appendChild(nextLi);
+        }
+
+        // Sayfa değiştir
+        function changePage(page) {
+            if (page < 1 || page > Math.ceil(allGalleryItems.length / itemsPerPage)) return;
+            currentPage = page;
+            displayGallery();
+        }
+
+        // Galeri görseli düzenle
+        async function editGalleryItem(id) {
+            try {
+                const response = await fetch(`${API_URL}/gallery/${id}`, {
+                    headers: getHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    const error = await response.json();
+                    throw new Error(error.error || 'Görsel bilgileri alınırken bir hata oluştu');
+                }
+                
+                const item = await response.json();
+                
+                document.getElementById('gorselBaslik').value = item.title;
+                document.getElementById('gorselKategori').value = item.category;
+                document.getElementById('gorselAciklama').value = item.description;
+                document.getElementById('gorselDurum').checked = item.status === 1;
+                
+                const modal = new bootstrap.Modal(document.getElementById('yeniGaleriModal'));
+                modal.show();
+            } catch (error) {
+                console.error('Hata:', error);
+                alert(error.message || 'Görsel bilgileri alınırken bir hata oluştu');
+            }
+        }
+
+        // Galeri görseli sil
+        async function deleteGalleryItem(id) {
+            if (!confirm('Bu görseli silmek istediğinizden emin misiniz?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/gallery/${id}`, {
+                    method: 'DELETE',
+                    headers: getHeaders()
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    const error = await response.json();
+                    throw new Error(error.error || 'Görsel silinirken bir hata oluştu');
+                }
+
+                alert('Görsel başarıyla silindi!');
+                loadGallery();
+            } catch (error) {
+                console.error('Hata:', error);
+                alert(error.message || 'Görsel silinirken bir hata oluştu');
+            }
+        }
+
+        // Yeni görsel kaydet
+        document.getElementById('gorselKaydet').addEventListener('click', async function() {
+            const form = document.getElementById('yeniGaleriForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('title', document.getElementById('gorselBaslik').value);
+            formData.append('category', document.getElementById('gorselKategori').value);
+            formData.append('description', document.getElementById('gorselAciklama').value);
+            formData.append('status', document.getElementById('gorselDurum').checked ? 1 : 0);
+            formData.append('image', document.getElementById('gorselDosya').files[0]);
+
+            try {
+                const response = await fetch(`${API_URL}/gallery`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${checkAuth()}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    const error = await response.json();
+                    throw new Error(error.error || 'Görsel kaydedilirken bir hata oluştu');
+                }
+
+                alert('Görsel başarıyla kaydedildi!');
+                
+                // Modal'ı kapat ve formu temizle
+                const modal = bootstrap.Modal.getInstance(document.getElementById('yeniGaleriModal'));
+                modal.hide();
+                form.reset();
+
+                // Galeri listesini yenile
+                loadGallery();
+            } catch (error) {
+                console.error('Hata:', error);
+                alert(error.message || 'Görsel kaydedilirken bir hata oluştu');
             }
         });
 
-        // Yeni görsel kaydetme işlevi
-        document.getElementById('gorselKaydet').addEventListener('click', function() {
-            const form = document.getElementById('yeniGaleriForm');
-            if(form.checkValidity()) {
-                // Burada API'ye kaydetme isteği atılacak
-                alert('Görsel başarıyla kaydedildi!');
-                const modal = bootstrap.Modal.getInstance(document.getElementById('yeniGaleriModal'));
-                modal.hide();
-            } else {
-                form.reportValidity();
+        // Çıkış yapma işlevi
+        document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+            e.preventDefault();
+            if(confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                try {
+                    const response = await fetch(`${API_URL}/logout`, {
+                        method: 'POST',
+                        headers: getHeaders()
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Çıkış yapılırken bir hata oluştu');
+                    }
+                    
+                    // Local storage'ı temizle
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    
+                    // Login sayfasına yönlendir
+                    window.location.href = 'login.html';
+                } catch (error) {
+                    console.error('Çıkış yapma hatası:', error);
+                    alert('Çıkış yapılırken bir hata oluştu');
+                }
             }
         });
     </script>
